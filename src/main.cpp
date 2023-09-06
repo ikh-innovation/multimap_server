@@ -348,8 +348,19 @@ private:
         }
         catch (YAML::Exception) 
         {
-          ROS_ERROR("maps_package nor maps_path field are defined");
-          exit(-1);
+          try
+          {
+            if( !pn.getParam("maps_path",map_path_root))
+            {
+              ROS_ERROR("maps_package nor maps_path (or param) field are defined");
+              exit(-1);
+            }
+          }
+          catch(const std::exception& e)
+          {
+            ROS_ERROR("maps_package nor maps_path field are defined");
+            exit(-1);
+          }
         }
       }
       ROS_INFO_STREAM("map_path_root = " << map_path_root);
@@ -405,6 +416,8 @@ private:
     *msg = "Environments loaded successfully";
     return true;
   }
+
+
 
   bool loadMapCallback(multimap_server_msgs::LoadMap::Request& req, multimap_server_msgs::LoadMap::Response& res)
   {
@@ -608,6 +621,7 @@ int main(int argc, char** argv)
 
   try
   {
+
     MultimapServer ms(fname);
     ros::spin();
   }
