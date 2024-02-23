@@ -11,8 +11,8 @@ find_package(catkin REQUIRED
         )
 
 find_package(Bullet REQUIRED)
-find_package(SDL REQUIRED)
-find_package(SDL_image REQUIRED)
+find_package(SDL2 REQUIRED)
+find_package(SDL2_image REQUIRED)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(YAMLCPP yaml-cpp REQUIRED)
@@ -36,8 +36,8 @@ include_directories(
     include
     ${BULLET_INCLUDE_DIRS}
     ${catkin_INCLUDE_DIRS}
-    ${SDL_INCLUDE_DIR}
-    ${SDL_IMAGE_INCLUDE_DIRS}
+    ${SDL2_INCLUDE_DIR}
+    ${SDL2_IMAGE_INCLUDE_DIRS}
     ${YAMLCPP_INCLUDE_DIRS}
 )
 
@@ -46,8 +46,8 @@ add_dependencies(multimap_server_image_loader ${${PROJECT_NAME}_EXPORTED_TARGETS
 target_link_libraries(multimap_server_image_loader
     ${BULLET_LIBRARIES}
     ${catkin_LIBRARIES}
-    ${SDL_LIBRARY}
-    ${SDL_IMAGE_LIBRARIES}
+    ${SDL2_LIBRARY}
+    ${SDL2_IMAGE_LIBRARIES}
 )
 
 add_executable(multimap_server src/main.cpp)

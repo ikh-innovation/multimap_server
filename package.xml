@@ -14,8 +14,8 @@
   <build_depend>bullet</build_depend>
   <build_depend>nav_msgs</build_depend>
   <build_depend>roscpp</build_depend>
-  <build_depend>sdl</build_depend>
-  <build_depend>sdl-image</build_depend>
+  <build_depend>sdl2</build_depend>
+  <build_depend>sdl2-image</build_depend>
   <build_depend>tf2</build_depend>
   <build_depend>yaml-cpp</build_depend>
   <build_depend>multimap_server_msgs</build_depend>
@@ -23,8 +23,8 @@
   <run_depend>bullet</run_depend>
   <run_depend>nav_msgs</run_depend>
   <run_depend>roscpp</run_depend>
-  <run_depend>sdl</run_depend>
-  <run_depend>sdl-image</run_depend>
+  <run_depend>sdl2</run_depend>
+  <run_depend>sdl2-image</run_depend>
   <run_depend>tf2</run_depend>
   <run_depend>yaml-cpp</run_depend>
   <run_depend>multimap_server_msgs</run_depend>
