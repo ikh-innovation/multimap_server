@@ -112,6 +112,7 @@ namespace multimap_server
     local_data.resize(static_cast<size_t>(width) * static_cast<size_t>(height));
 
     //  std::cout << "Image \"" << fname << "\": Processing map data (" << (negate ? "" : "un") << "negate, occ_th=" << occ_th << ", free_th=" << free_th << ")" << std::endl;
+    
     for (int j = 0; j < height; ++j)
     {
       const uint8_t *scanline = pixels + j * rowstride;
