@@ -52,110 +52,119 @@
 
 namespace multimap_server
 {
-void loadMapFromFile(nav_msgs::GetMap::Response* resp, const char* fname, double res, bool negate, double occ_th,
-                     double free_th, double* origin, MapMode mode)
-{
-  SDL_Surface* img;
-
-  unsigned char* pixels;
-  unsigned char* p;
-  unsigned char value;
-  int rowstride, n_channels, avg_channels;
-  unsigned int i, j;
-  int k;
-  double occ;
-  int alpha;
-  int color_sum;
-  double color_avg;
-
-  // Load the image using SDL.  If we get NULL back, the image load failed.
-  if (!(img = IMG_Load(fname)))
+  void loadMapFromFile(nav_msgs::GetMap::Response *resp, const char *fname, double res, bool negate, double occ_th,
+                       double free_th, double *origin, MapMode mode)
   {
-    std::string errmsg =
-        std::string("failed to open image file \"") + std::string(fname) + std::string("\": ") + IMG_GetError();
-    throw std::runtime_error(errmsg);
-  }
 
-  // Copy the image data into the map structure
-  resp->map.info.width = img->w;
-  resp->map.info.height = img->h;
-  resp->map.info.resolution = res;
-  resp->map.info.origin.position.x = *(origin);
-  resp->map.info.origin.position.y = *(origin + 1);
-  resp->map.info.origin.position.z = 0.0;
-  btQuaternion q;
-  // setEulerZYX(yaw, pitch, roll)
-  q.setEulerZYX(*(origin + 2), 0, 0);
-  resp->map.info.origin.orientation.x = q.x();
-  resp->map.info.origin.orientation.y = q.y();
-  resp->map.info.origin.orientation.z = q.z();
-  resp->map.info.origin.orientation.w = q.w();
+    // unsigned char* pixels;
+    // unsigned char* p;
+    // unsigned char value;
+    // int rowstride, n_channels, avg_channels;
+    // unsigned int i, j;
+    // int k;
+    // double occ;
+    // int alpha;
+    // int color_sum;
+    // double color_avg;
 
-  // Allocate space to hold the data
-  resp->map.data.resize(resp->map.info.width * resp->map.info.height);
-
-  // Get values that we'll need to iterate through the pixels
-  rowstride = img->pitch;
-  n_channels = img->format->BytesPerPixel;
-
-  // NOTE: Trinary mode still overrides here to preserve existing behavior.
-  // Alpha will be averaged in with color channels when using trinary mode.
-  if (mode == TRINARY || !img->format->Amask)
-    avg_channels = n_channels;
-  else
-    avg_channels = n_channels - 1;
-
-  // Copy pixel data into the map structure
-  pixels = (unsigned char*)(img->pixels);
-  for (j = 0; j < resp->map.info.height; j++)
-  {
-    for (i = 0; i < resp->map.info.width; i++)
+    //  std::cout <<"Loading image "<< fname<< std::endl;
+    SDL_Surface *raw_image = IMG_Load(fname);
+    //  std::cout<<"Image \""<< fname<< "\" loaded"<< std::endl;
+    if (!raw_image)
     {
-      // Compute mean of RGB for this pixel
-      p = pixels + j * rowstride + i * n_channels;
-      color_sum = 0;
-      for (k = 0; k < avg_channels; k++)
-        color_sum += *(p + (k));
-      color_avg = color_sum / (double)avg_channels;
-
-      if (n_channels == 1)
-        alpha = 1;
-      else
-        alpha = *(p + n_channels - 1);
-
-      if (negate)
-        color_avg = 255 - color_avg;
-
-      if (mode == RAW)
-      {
-        value = color_avg;
-        resp->map.data[MAP_IDX(resp->map.info.width, i, resp->map.info.height - j - 1)] = value;
-        continue;
-      }
-
-      // If negate is true, we consider blacker pixels free, and whiter
-      // pixels free.  Otherwise, it's vice versa.
-      occ = (255 - color_avg) / 255.0;
-
-      // Apply thresholds to RGB means to determine occupancy values for
-      // map.  Note that we invert the graphics-ordering of the pixels to
-      // produce a map with cell (0,0) in the lower-left corner.
-      if (occ > occ_th)
-        value = +100;
-      else if (occ < free_th)
-        value = 0;
-      else if (mode == TRINARY || alpha < 1.0)
-        value = -1;
-      else
-      {
-        double ratio = (occ - free_th) / (occ_th - free_th);
-        value = 99 * ratio;
-      }
-
-      resp->map.data[MAP_IDX(resp->map.info.width, i, resp->map.info.height - j - 1)] = value;
+      std::string errmsg =
+          std::string("failed to open image file \"") + std::string(fname) + std::string("\": ") + IMG_GetError();
+      throw std::runtime_error(errmsg);
     }
-  }
 
-  SDL_FreeSurface(img);
-}
+    std::unique_ptr<SDL_Surface, void (*)(SDL_Surface *)> img(raw_image, &SDL_FreeSurface);
+
+    //  std::cout << "Image \"" << fname << "\" converted" << std::endl;
+    const int width = img->w;
+    const int height = img->h;
+    //  std::cout << "Image \"" << fname << "\" is " << width << " x " << height << std::endl;
+
+    // Copy the image data into the map structure
+    resp->map.info.width = width;
+    resp->map.info.height = height;
+    resp->map.info.resolution = res;
+    resp->map.info.origin.position.x = *(origin);
+    resp->map.info.origin.position.y = *(origin + 1);
+    resp->map.info.origin.position.z = 0.0;
+    btQuaternion q;
+    // setEulerZYX(yaw, pitch, roll)
+    q.setEulerZYX(*(origin + 2), 0, 0);
+    resp->map.info.origin.orientation.x = q.x();
+    resp->map.info.origin.orientation.y = q.y();
+    resp->map.info.origin.orientation.z = q.z();
+    resp->map.info.origin.orientation.w = q.w();
+
+    // const varables for easier access in loop
+    const int rowstride = img->pitch;
+    const int n_channels = img->format->BytesPerPixel;
+    const bool has_alpha = img->format->Amask != 0;
+    const int avg_channels = (mode == TRINARY || !has_alpha) ? n_channels : (n_channels - 1);
+
+    const uint8_t *pixels = static_cast<const uint8_t *>(img->pixels);
+
+    //  std::cout << "Image \"" << fname << "\": " << n_channels << " channels, " << (has_alpha ? "has" : "no") << " alpha" << std::endl;
+    std::vector<int8_t> local_data;
+    local_data.resize(static_cast<size_t>(width) * static_cast<size_t>(height));
+
+    //  std::cout << "Image \"" << fname << "\": Processing map data (" << (negate ? "" : "un") << "negate, occ_th=" << occ_th << ", free_th=" << free_th << ")" << std::endl;
+    for (int j = 0; j < height; ++j)
+    {
+      const uint8_t *scanline = pixels + j * rowstride;
+      const int dest_row = height - j - 1;
+      int8_t *dest_ptr = reinterpret_cast<int8_t *>(local_data.data() + static_cast<size_t>(dest_row) * static_cast<size_t>(width));
+
+      for (int i = 0; i < width; ++i)
+      {
+        const uint8_t *p = scanline + i * n_channels;
+
+        int color_sum = 0;
+        for (int k = 0; k < avg_channels; ++k)
+          color_sum += p[k];
+        const double color_avg = static_cast<double>(color_sum) / static_cast<double>(avg_channels);
+
+        const int alpha = (n_channels == 1) ? 255 : static_cast<int>(p[n_channels - 1]);
+
+        double adjusted = color_avg;
+        if (negate)
+          adjusted = 255.0 - adjusted;
+
+        if (mode == RAW)
+        {
+          // RAW: store raw averaged grayscale (clamped to [0,255])
+          int raw_val = static_cast<int>(std::round(adjusted));
+          raw_val = std::min(255, std::max(0, raw_val));
+          dest_ptr[i] = static_cast<int8_t>(raw_val);
+          continue;
+        }
+
+        const double occ = (255.0 - adjusted) / 255.0;
+
+        int val;
+        if (occ > occ_th)
+          val = 100;
+        else if (occ < free_th)
+          val = 0;
+        else if (mode == TRINARY || alpha < 1)
+          val = -1;
+        else
+        {
+          const double ratio = (occ - free_th) / (occ_th - free_th);
+          val = static_cast<int>(std::lround(99.0 * ratio));
+          val = std::min(99, std::max(0, val));
+        }
+
+        dest_ptr[i] = static_cast<int8_t>(val);
+      }
+    }
+    // std::cout << "Image \"" << fname << "\": Map data processing complete" << std::endl;
+    resp->map.data = std::move(local_data);
+    // std::cout << "Image \"" << fname << "\": Map data copied" << std::endl;
+    // SDL_FreeSurface(raw_image);
+    // std::cout << "Image \"" << fname << "\": Image memory freed" << std::endl;
+  }
 }
