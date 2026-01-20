@@ -1,6 +1,18 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(multimap_server)
 
+if(NOT "/usr/lib/x86_64-linux-gnu/cmake/sdl2_image/sdl2_image-config.cmake")
+    message("-- Configuring SDL2_image")
+    message("Try to install sdl2...")
+    execute_process(COMMAND sudo apt-get install -y sdl2-*)
+    if(NOT "/usr/lib/x86_64-linux-gnu/cmake/sdl2_image/") 
+        message("/usr/lib/x86_64-linux-gnu/cmake/sdl2_image not found.")
+        execute_process(COMMAND sudo mkdir /usr/lib/x86_64-linux-gnu/cmake/sdl2_image)
+    endif (NOT "/usr/lib/x86_64-linux-gnu/cmake/sdl2_image/")
+    message("Copy cmake file to /usr/lib/x86_64-linux-gnu/cmake/sdl2_image")
+    execute_process(COMMAND sudo cp ${CMAKE_CURRENT_LIST_DIR}/cmake/sdl2_image-config.cmake /usr/lib/x86_64-linux-gnu/cmake/sdl2_image/.)
+endif(NOT "/usr/lib/x86_64-linux-gnu/cmake/sdl2_image/sdl2_image-config.cmake")
+
 find_package(catkin REQUIRED
         COMPONENTS
             roscpp
@@ -11,8 +23,8 @@ find_package(catkin REQUIRED
         )
 
 find_package(Bullet REQUIRED)
-find_package(SDL REQUIRED)
-find_package(SDL_image REQUIRED)
+find_package(SDL2 REQUIRED)
+find_package(SDL2_image REQUIRED)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(YAMLCPP yaml-cpp REQUIRED)
@@ -36,8 +48,8 @@ include_directories(
     include
     ${BULLET_INCLUDE_DIRS}
     ${catkin_INCLUDE_DIRS}
-    ${SDL_INCLUDE_DIR}
-    ${SDL_IMAGE_INCLUDE_DIRS}
+    ${SDL2_INCLUDE_DIR}
+    ${SDL2_IMAGE_INCLUDE_DIRS}
     ${YAMLCPP_INCLUDE_DIRS}
 )
 
@@ -46,8 +58,8 @@ add_dependencies(multimap_server_image_loader ${${PROJECT_NAME}_EXPORTED_TARGETS
 target_link_libraries(multimap_server_image_loader
     ${BULLET_LIBRARIES}
     ${catkin_LIBRARIES}
-    ${SDL_LIBRARY}
-    ${SDL_IMAGE_LIBRARIES}
+    ${SDL2_LIBRARY}
+    ${SDL2_IMAGE_LIBRARIES}
 )
 
 add_executable(multimap_server src/main.cpp)
